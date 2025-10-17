@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Have I Been Pwned - Contador</title>
+    <style>
+        /* Base e Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* Fundo e Estilos Globais */
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 20px;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('background.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Container Principal */
+        .container {
+            max-width: 450px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* Título HIBP */
+        .logo-title {
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .logo-title span:first-child {
+            color: #f7f7f7;
+            font-style: italic;
+            text-shadow: 0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3);
+        }
+
+        .logo-title span:last-child {
+            color: #00bfff;
+            letter-spacing: -2px;
+        }
+
+        .logo-title .pwned-p {
+            display: inline-block;
+            transform: translateY(2px) rotate(10deg);
+        }
+
+        .logo-subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+
+        /* Campos de Input e Botão Separados */
+        .check-block {
+            margin-bottom: 25px; /* Espaço entre o bloco de email e senha */
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #252525;
+        }
+
+        .check-block h2 {
+            font-size: 1.1rem;
+            color: #ccc;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            font-size: 1rem;
+            background-color: #f7f7f7;
+            color: #333;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #333; 
+        }
+
+        input::placeholder {
+            color: #888;
+        }
+        
+        .submit-btn {
+            padding: 15px 20px;
+            border: none;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%; 
+            border-radius: 4px;
+        }
+        
+        #email-check-button {
+            background-color: #3182CE; /* Azul para Email */
+        }
+        
+        #password-check-button {
+            background-color: #00bfff; /* Ciano para Senha */
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+        
+        .submit-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Rodapé com Link Discreto */
+        .footer-text {
+            color: #888;
+            font-size: 0.8rem;
+            margin-top: 30px; 
+            line-height: 1.6;
+        }
+
+        .footer-text a {
+            color: #00bfff;
+            text-decoration: none;
+        }
+        
+        /* Estilo para o link de status no rodapé */
+        .status-link {
+            color: #666; 
+            font-size: 0.75rem;
+            margin-left: 10px;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* -------------------------------------- */
+        /* ESTILOS DOS POP-UPS (Gerais - Mantidos) */
+        /* -------------------------------------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            padding: 25px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            text-align: left;
+            transform: translateY(-50px);
+            transition: transform 0.3s ease;
+        }
+        
+        /* Cor de borda específica para cada modal */
+        #error-modal .modal-content { border: 1px solid #ff4d4d; }
+        #status-modal .modal-content { border: 1px solid #00bfff; } 
+
+        .modal-overlay.show {
+            opacity: 1;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        #status-modal .modal-header { color: #00bfff; }
+        #error-modal .modal-header { color: #ff4d4d; }
+
+        .modal-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+            line-height: 1;
+        }
+
+        .modal-body p {
+            font-size: 1rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .modal-button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        #error-modal .modal-button { background-color: #ff4d4d; }
+        #status-modal .modal-button { background-color: #00bfff; }
+
+        #error-modal .modal-button:hover { background-color: #cc3939; }
+        #status-modal .modal-button:hover { background-color: #0088cc; }
+        
+        #status-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #f7f7f7;
+            text-align: center;
+            padding: 15px 0;
+            background-color: #1a1a1a;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="logo-title">
+            <span>Have I Been</span>
+            <br>
+            <span class="pwned-p">P</span>wned
+        </h1>
+
+        <p class="logo-subtitle">
+            Verifique se sua senha ou email aparecem em vazamento de dados
+        </p>
+
+        <div id="email-check-box" class="check-block">
+            <h2>Verificar E-mail</h2>
+            <input type="email" id="email-input" placeholder="Email" autocomplete="off">
+            <button class="submit-btn" id="email-check-button" onclick="handleCheck('email')">Check Email</button>
+        </div>
+
+        <div id="password-check-box" class="check-block">
+            <h2>Verificar Senha</h2>
+            <input type="password" id="password-input" placeholder="Senha" autocomplete="new-password">
+            <button class="submit-btn" id="password-check-button" onclick="handleCheck('password')">Check Password</button>
+        </div>
+
+        <p class="footer-text">
+            Ao usar essa API confirmo estar sujeito aos <a href="#" onclick="return false;">termos de uso</a>.
+            <br> <br> <br> <br> <br> <br> 
+            Servidor: APX-EUA | 
+            <a href="#" class="status-link" onclick="showStatusModal(); return false;">Versão: 1.2.9</a>
+        </p>
+    </div>
+
+    <div id="error-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-icon">⚠️</span>
+                <h3>Erro de Conexão com a API</h3>
+            </div>
+            <div class="modal-body">
+                <p>Não foi possível realizar a consulta no momento. O servidor da API de vazamentos está fora do ar ou sobrecarregado. Tente novamente em breve.</p>
+            </div>
+            <button class="modal-button" onclick="hideErrorModal()">OK</button>
+        </div>
+    </div>
+    
+    <div id="status-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-icon">ⓘ</span>
+                <h3>Relatório do Servidor</h3>
+            </div>
+            <div class="modal-body">
+                <p id="status-display">Carregando...</p>
+                <p style="font-size: 0.8rem; color: #888;">Dados de desempenho em tempo real. Atualizado ao abrir.</p>
+            </div>
+            <button class="modal-button" onclick="hideStatusModal()">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        const EMAIL_INPUT = document.getElementById('email-input');
+        const PASSWORD_INPUT = document.getElementById('password-input');
+        const EMAIL_CHECK_BUTTON = document.getElementById('email-check-button');
+        const PASSWORD_CHECK_BUTTON = document.getElementById('password-check-button');
+        
+        // Elementos dos Modals
+        const ERROR_MODAL = document.getElementById('error-modal');
+        const STATUS_MODAL = document.getElementById('status-modal');
+        const STATUS_DISPLAY = document.getElementById('status-display');
+
+        const ORIGINAL_EMAIL_PLACEHOLDER = 'Email address';
+        const ORIGINAL_PASSWORD_PLACEHOLDER = 'Password';
+        const ORIGINAL_EMAIL_BUTTON_TEXT = 'Check Email';
+        const ORIGINAL_PASSWORD_BUTTON_TEXT = 'Check Password';
+
+        // --- Funções do Modal de Erro ---
+        function showErrorModal() {
+            ERROR_MODAL.style.display = 'flex';
+            setTimeout(() => ERROR_MODAL.classList.add('show'), 10);
+        }
+
+        function hideErrorModal() {
+            ERROR_MODAL.classList.remove('show');
+            setTimeout(() => {
+                ERROR_MODAL.style.display = 'none';
+            }, 300); 
+
+            // Restaura o estado da UI para AMBOS os botões e inputs
+            EMAIL_INPUT.disabled = false;
+            PASSWORD_INPUT.disabled = false;
+            EMAIL_CHECK_BUTTON.textContent = ORIGINAL_EMAIL_BUTTON_TEXT;
+            PASSWORD_CHECK_BUTTON.textContent = ORIGINAL_PASSWORD_BUTTON_TEXT;
+            EMAIL_CHECK_BUTTON.disabled = false;
+            PASSWORD_CHECK_BUTTON.disabled = false;
+        }
+        
+        // --- Funções do Modal de Status ---
+        async function showStatusModal() {
+            STATUS_DISPLAY.textContent = "Carregando...";
+            STATUS_MODAL.style.display = 'flex';
+            setTimeout(() => STATUS_MODAL.classList.add('show'), 10);
+            
+            try {
+                const response = await fetch('/api/counts');
+                const data = await response.json();
+                
+                const emailCount = data.email || 0;
+                const passwordCount = data.password || 0;
+                
+                // Formato solicitado: "Status: (numero de email) / (numero de senha)"
+                STATUS_DISPLAY.textContent = `Status: ${emailCount} / ${passwordCount}`;
+                
+            } catch (error) {
+                STATUS_DISPLAY.textContent = "Status: N/A";
+            }
+        }
+
+        function hideStatusModal() {
+            STATUS_MODAL.classList.remove('show');
+            setTimeout(() => {
+                STATUS_MODAL.style.display = 'none';
+            }, 300);
+        }
+        
+        // --- Lógica Principal (Check Button) ---
+        /**
+         * Lida com o clique em qualquer um dos botões de checagem.
+         * @param {string} type 'email' ou 'password'
+         */
+        function handleCheck(type) {
+            const isEmailCheck = (type === 'email');
+            const inputField = isEmailCheck ? EMAIL_INPUT : PASSWORD_INPUT;
+            const checkButton = isEmailCheck ? EMAIL_CHECK_BUTTON : PASSWORD_CHECK_BUTTON;
+            const endpoint = isEmailCheck ? '/api/counts/email' : '/api/counts/password';
+            
+            const value = inputField.value.trim();
+
+            if (!value) {
+                // Simples validação de campo vazio para o campo relevante
+                inputField.placeholder = "Preencha este campo!";
+                setTimeout(() => {
+                    inputField.placeholder = isEmailCheck ? ORIGINAL_EMAIL_PLACEHOLDER : ORIGINAL_PASSWORD_PLACEHOLDER;
+                }, 1500);
+                return;
+            }
+
+            // A. Estado de Checagem
+            checkButton.textContent = "Checando...";
+            
+            // Desabilita AMBOS os botões e inputs durante a checagem (para evitar concorrência)
+            EMAIL_CHECK_BUTTON.disabled = true;
+            PASSWORD_CHECK_BUTTON.disabled = true;
+            EMAIL_INPUT.disabled = true;
+            PASSWORD_INPUT.disabled = true;
+            
+            // Limpa o valor (simulando submissão)
+            inputField.value = ''; 
+            
+            // B. Incrementa o contador em background
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .catch(error => {
+                console.error(`Falha na atualização do contador (${type}):`, error);
+            });
+            
+            // C. Simula o atraso do servidor (1.5 segundos)
+            setTimeout(() => {
+                // D. Estado de Erro Realista: Mostra o pop-up de ERRO
+                showErrorModal();
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
